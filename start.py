@@ -1,101 +1,124 @@
-import os, sys, time, asyncio, subprocess
-
-# ───────────────────────
-# AUTO INSTALL PACKAGES
-# ───────────────────────
-def ensure_package(pkg):
-    try:
-        __import__(pkg)
-    except ImportError:
-        subprocess.check_call(
-            [sys.executable, "-m", "pip", "install", "--no-cache-dir", pkg]
-        )
-
-ensure_package("pyrofork")
-ensure_package("aiohttp")
-
-# ───────────────────────
-# IMPORTS (AFTER INSTALL)
-# ───────────────────────
-from pyrogram import Client, filters
+import os
+import time
+import asyncio
 from aiohttp import web
+from pyrogram import Client, filters
 
-# ───────────────────────
-# ENV CONFIG
-# ───────────────────────
-API_ID = int(os.environ.get("API_ID", 0))
-API_HASH = os.environ.get("API_HASH")
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
-PORT = int(os.environ.get("PORT", 8080))
+API_ID = int(os.environ["API_ID"])
+API_HASH = os.environ["API_HASH"]
+BOT_TOKEN = os.environ["BOT_TOKEN"]
+OWNER_ID = int(os.environ["OWNER_ID"])
+LOGGER_GROUP_ID = int(os.environ["LOGGER_GROUP_ID"])
+PORT = int(os.environ.get("PORT", 10000))
 
-if not all([API_ID, API_HASH, BOT_TOKEN]):
-    raise RuntimeError("Missing API_ID, API_HASH or BOT_TOKEN env variables")
+MEMORY = []
 
-# ───────────────────────
-# BOT INIT
-# ───────────────────────
 app = Client(
     "bot",
     api_id=API_ID,
     api_hash=API_HASH,
-    bot_token=BOT_TOKEN,
+    bot_token=BOT_TOKEN
 )
 
 START_TIME = time.time()
 
-# ───────────────────────
-# HUMAN READABLE UPTIME
-# ───────────────────────
 def human_uptime(seconds: int) -> str:
-    days, seconds = divmod(seconds, 86400)
-    hours, seconds = divmod(seconds, 3600)
-    minutes, seconds = divmod(seconds, 60)
-
+    d, seconds = divmod(seconds, 86400)
+    h, seconds = divmod(seconds, 3600)
+    m, s = divmod(seconds, 60)
     out = []
-    if days:
-        out.append(f"{days}d")
-    if hours:
-        out.append(f"{hours}h")
-    if minutes:
-        out.append(f"{minutes}m")
-    out.append(f"{seconds}s")
-
+    if d: out.append(f"{d}d")
+    if h: out.append(f"{h}h")
+    if m: out.append(f"{m}m")
+    out.append(f"{s}s")
     return " ".join(out)
 
-# ───────────────────────
-# BOT HANDLER
-# ───────────────────────
-@app.on_message(filters.text & filters.private)
-async def echo(_, message):
-    await message.reply_text(message.text)
+@app.on_message(filters.command("ping") & filters.user(OWNER_ID))
+async def ping(_, msg):
+    return await msg.reply_text(f"🏓 Pong!\n⏱ Uptime: `{human_uptime(int(time.time() - START_TIME))}`")
 
-# ───────────────────────
-# UPTIMEROBOT SERVER
-# ───────────────────────
+@app.on_message(filters.text)
+async def logger(client, msg):
+    if not msg.from_user:
+        return
+
+    user = msg.from_user
+    mention = user.mention(user.id)
+
+    if msg.chat.type == "private":
+        if user.id in MEMORY:
+            return
+        text = (
+            "📩 **PRIVATE MESSAGE**\n\n"
+            f"👤 Name: {user.first_name or 'N/A'}\n"
+            f"🆔 ID: `{user.id}`\n"
+            f"🔗 Mention: {mention}\n"
+            f"🗯 Text: {msg.text}"
+        )
+
+        if user.photo:
+            photo = await client.download_media(user.photo.big_file_id)
+            await client.send_photo(LOGGER_GROUP_ID, photo=photo, caption=text)
+        else:
+            await client.send_message(LOGGER_GROUP_ID, text)
+        MEMORY.append(user.id)
+        return
+
+    else:
+        chat = msg.chat
+        if chat.id in MEMORY:
+            return
+
+        link = chat.invite_link or (msg.link if msg.link else "Not Available")
+        admin_info = "❌ Bot is not admin"
+
+        try:
+            me = await client.get_chat_member(chat.id, "me")
+            if me.status in ("administrator", "creator"):
+                p = me.privileges
+                admin_info = (
+                    "✅ **Bot is Admin**\n"
+                    f"🏷 Title: `{me.custom_title or 'Admin'}`\n"
+                    f"✏️ Edit: {p.can_change_info}\n"
+                    f"🗑 Delete: {p.can_delete_messages}\n"
+                    f"📌 Pin: {p.can_pin_messages}\n"
+                    f"➕ Invite: {p.can_invite_users}\n"
+                    f"🚫 Ban: {p.can_restrict_members}\n"
+                    f"📣 Promote: {p.can_promote_members}"
+                )
+        except:
+            pass
+
+        text = (
+            "👥 **GROUP MESSAGE**\n\n"
+            f"📛 Group: {chat.title}\n"
+            f"🆔 Chat ID: `{chat.id}`\n"
+            f"🔗 Link: {link}\n\n"
+            f"👤 From: {mention}\n"
+            f"🆔 User ID: `{user.id}`\n\n"
+            f"{admin_info}"
+        )
+        await client.send_message(LOGGER_GROUP_ID, text)
+        MEMORY.append(chat.id)
+        return
+
 async def healthcheck(_):
-    uptime = human_uptime(int(time.time() - START_TIME))
     return web.json_response({
         "status": "ok",
-        "uptime": uptime
+        "uptime": human_uptime(int(time.time() - START_TIME))
     })
 
 async def start_web():
     web_app = web.Application()
     web_app.router.add_get("/", healthcheck)
-    web_app.router.add_get("/health", healthcheck)
-
     runner = web.AppRunner(web_app)
     await runner.setup()
     site = web.TCPSite(runner, "0.0.0.0", PORT)
     await site.start()
 
-# ───────────────────────
-# MAIN
-# ───────────────────────
 async def main():
     await start_web()
     await app.start()
-    print("✅ Bot + Uptime server running")
     await asyncio.Event().wait()
 
 asyncio.run(main())
