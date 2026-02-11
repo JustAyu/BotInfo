@@ -98,7 +98,7 @@ async def group_handler(client, msg: Message):
         f"📛 Group: {chat.title}\n"
         f"🆔 Chat ID: `{chat.id}`\n"
         f"🔗 Link: {link}\n\n"
-        f"👤 From: {mention}\n"
+        f"👤 From: {user.mention}\n"
         f"🆔 User ID: `{user.id}`\n\n"
         f"{admin_info}")
     try:
