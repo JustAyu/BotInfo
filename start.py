@@ -2,7 +2,7 @@ import os
 import time
 import asyncio
 from aiohttp import web
-from pyrogram import Client, filters
+from pyrogram import Client, filters, idle
 from pyrogram.types import Message
 
 API_ID = int(os.environ["API_ID"])
@@ -121,6 +121,5 @@ async def main():
     await start_web()
     await app.start()
     await asyncio.Event().wait()
-    await app.idle
-
+    await idle()
 asyncio.run(main())
