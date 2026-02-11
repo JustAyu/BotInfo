@@ -120,7 +120,7 @@ async def start_web():
 async def main():
     await start_web()
     await app.start()
-    await app.idle()
     await asyncio.Event().wait()
+    await app.idle
 
 asyncio.run(main())
