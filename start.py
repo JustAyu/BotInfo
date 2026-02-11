@@ -131,20 +131,4 @@ async def main():
     await app.stop()
 
 if __name__ == "__main__":
-    asyncio.run(main())        "status": "ok",
-        "uptime": human_uptime(int(time.time() - START_TIME))
-    })
-
-async def start_web():
-    web_app = web.Application()
-    web_app.router.add_get("/", healthcheck)
-    runner = web.AppRunner(web_app)
-    await runner.setup()
-    site = web.TCPSite(runner, "0.0.0.0", PORT)
-    await site.start()
-
-async def main():
-    await start_web()
-    app.run()
-    
-asyncio.run(main())
+    asyncio.run(main())
