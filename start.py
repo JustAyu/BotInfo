@@ -104,7 +104,7 @@ async def group_handler(client, msg: Message):
         f"{admin_info}")
     try:
         if chat.photo:
-            photo = await client.download_media(user.photo.big_file_id)
+            photo = await client.download_media(chat.photo.big_file_id)
             if photo:
                 await client.send_photo(LOGGER_GROUP_ID, photo, caption=text)
             else:
