@@ -103,7 +103,14 @@ async def group_handler(client, msg: Message):
         f"🆔 User ID: `{user.id}`\n\n"
         f"{admin_info}")
     try:
-        await client.send_message(LOGGER_GROUP_ID, text)
+        if chat.photo:
+            photo = await client.download_media(user.photo.big_file_id)
+            if photo:
+                await client.send_photo(LOGGER_GROUP_ID, photo, caption=text)
+            else:
+                await client.send_message(LOGGER_GROUP_ID, text)
+        else:
+            await client.send_message(LOGGER_GROUP_ID, text)
         MEMORY.append(chat.id)
     except Exception as e:
         logger.error(f"Error sending group message log: {e}")
