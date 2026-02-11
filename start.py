@@ -3,6 +3,7 @@ import time
 import asyncio
 from aiohttp import web
 from pyrogram import Client, filters
+from pyrogram.types import message
 
 API_ID = int(os.environ["API_ID"])
 API_HASH = os.environ["API_HASH"]
