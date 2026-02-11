@@ -38,7 +38,7 @@ def human_uptime(seconds: int) -> str:
 async def ping(_, msg:Message):
     return await msg.reply_text(f"🏓 Pong!\n⏱ Uptime: `{human_uptime(int(time.time() - START_TIME))}`")
 
-@app.on_message(filters.text)
+@app.on_message(filters.text & ~filters.command("ping"))
 async def logger(client, msg:Message):
     if not msg.from_user:
         return
@@ -120,6 +120,7 @@ async def start_web():
 async def main():
     await start_web()
     await app.start()
+    await app.idle()
     await asyncio.Event().wait()
 
 asyncio.run(main())
