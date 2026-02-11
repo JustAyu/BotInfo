@@ -70,7 +70,7 @@ async def ping(_, msg: Message):
         except:
             pass
 
-@app.on_message(filters.text & ~filters.command)
+@app.on_message(filters.text & ~filters.command("ping"))
 async def logger_handler(client, msg: Message):
     """Log messages from private chats and groups"""
     try:
