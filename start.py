@@ -40,7 +40,7 @@ async def ping(_, msg: Message):
     )
 
 @app.on_message(filters.text & ~filters.command("ping"))
-async def logger(client, msg: Message):
+async def logger(_, msg: Message):
     if not msg.from_user:
         return
     user = msg.from_user
