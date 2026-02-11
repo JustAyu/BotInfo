@@ -11,7 +11,6 @@ BOT_TOKEN = os.environ["BOT_TOKEN"]
 OWNER_ID = 7467775243
 LOGGER_GROUP_ID = int(os.environ["LOGGER_GROUP_ID"])
 PORT = int(os.environ.get("PORT", 10000))
-
 MEMORY = []
 
 app = Client(
@@ -44,15 +43,12 @@ async def ping(_, msg: Message):
 async def logger(client, msg: Message):
     if not msg.from_user:
         return
-
     user = msg.from_user
     mention = user.mention(user.id)
-
+    
     if msg.chat.type == "private":
-
         if user.id in MEMORY:
             return
-
         text = (
             "📩 **PRIVATE MESSAGE**\n\n"
             f"👤 Name: {user.first_name or 'N/A'}\n"
@@ -60,30 +56,23 @@ async def logger(client, msg: Message):
             f"🔗 Mention: {mention}\n"
             f"🗯 Text: {msg.text}"
         )
-
         if user.photo:
             photo = await client.download_media(user.photo.big_file_id)
             await client.send_photo(LOGGER_GROUP_ID, photo, caption=text)
         else:
             await client.send_message(LOGGER_GROUP_ID, text)
-
         MEMORY.append(user.id)
         return
-
+    
     chat = msg.chat
-
     if chat.id in MEMORY:
         return
-
     link = chat.invite_link or (msg.link if msg.link else "Not Available")
     admin_info = "❌ Bot is not admin"
-
     try:
         me = await client.get_chat_member(chat.id, "me")
-
         if me.status in ("administrator", "creator"):
             p = me.privileges
-
             admin_info = (
                 "✅ **Bot is Admin**\n"
                 f"🏷 Title: `{me.custom_title or 'Admin'}`\n"
@@ -96,7 +85,7 @@ async def logger(client, msg: Message):
             )
     except:
         pass
-
+    
     text = (
         "👥 **GROUP MESSAGE**\n\n"
         f"📛 Group: {chat.title}\n"
@@ -106,7 +95,6 @@ async def logger(client, msg: Message):
         f"🆔 User ID: `{user.id}`\n\n"
         f"{admin_info}"
     )
-
     await client.send_message(LOGGER_GROUP_ID, text)
     MEMORY.append(chat.id)
 
@@ -123,11 +111,13 @@ async def start_web():
     await runner.setup()
     site = web.TCPSite(runner, "0.0.0.0", PORT)
     await site.start()
+    print(f"✅ Server running on port {PORT}")
 
 async def main():
-    await start_web()
+    async with app:
+        await start_web()
+        print("✅ Bot started!")
+        await idle()
 
 if __name__ == "__main__":
-    asyncio.run(main())
-
-app.run()
+    app.run(main())
