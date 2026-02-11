@@ -29,6 +29,7 @@ if not all([API_ID, API_HASH, BOT_TOKEN, LOGGER_GROUP_ID]):
     raise ValueError("API_ID, API_HASH, BOT_TOKEN, and LOGGER_GROUP_ID are required")
 
 MEMORY = []
+MEMORY_PVT = []
 
 app = Client(
     "bot",
@@ -123,7 +124,7 @@ async def logger_handler(client, msg: Message):
     """Log messages from private chats and groups"""
     try:
         user = msg.from_user
-        if user.id in MEMORY:
+        if user.id in MEMORY_PVT:
             return
         text = (
             "📩 **PRIVATE MESSAGE**\n\n"
@@ -141,7 +142,7 @@ async def logger_handler(client, msg: Message):
                     await client.send_message(LOGGER_GROUP_ID, text)
             else:
                 await client.send_message(LOGGER_GROUP_ID, text)
-            MEMORY.append(chat.id)
+            MEMORY_PVT.append(user.id)
         except Exception as e:
             logger.error(f"Error sending private message log: {e}")
             return
