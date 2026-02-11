@@ -74,6 +74,7 @@ async def ping(_, msg: Message):
 @app.on_message(filters.text & ~filters.command("ping") & filters.group)
 async def group_handler(client, msg: Message):
     chat = msg.chat
+    user = msg.from_user
     if chat.id in MEMORY:
         return
     link = chat.invite_link or (msg.link if msg.link else "Not Available")
