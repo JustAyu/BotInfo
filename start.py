@@ -3,7 +3,7 @@ import time
 import asyncio
 from aiohttp import web
 from pyrogram import Client, filters
-from pyrogram.types import message
+from pyrogram.types import Message
 
 API_ID = int(os.environ["API_ID"])
 API_HASH = os.environ["API_HASH"]
@@ -35,11 +35,11 @@ def human_uptime(seconds: int) -> str:
     return " ".join(out)
 
 @app.on_message(filters.command("ping") & filters.user(OWNER_ID))
-async def ping(_, msg):
+async def ping(_, msg:Message):
     return await msg.reply_text(f"🏓 Pong!\n⏱ Uptime: `{human_uptime(int(time.time() - START_TIME))}`")
 
 @app.on_message(filters.text)
-async def logger(client, msg):
+async def logger(client, msg:Message):
     if not msg.from_user:
         return
 
